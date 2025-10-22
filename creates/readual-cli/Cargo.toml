@@ -1,0 +1,16 @@
+[package]
+name = "readual-cli"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description.workspace = true
+
+[dependencies]
+readual-command-info = { path = "../readual-command-info" }
+readual-command-run = { path = "../readual-command-run" }
+clap = { version = "4.4", features = ["derive"] }
+
+[[bin]]
+name = "readual"
+path = "src/main.rs"

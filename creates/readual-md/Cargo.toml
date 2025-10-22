@@ -1,0 +1,11 @@
+[package]
+name = "readual-md"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "Library for parsing Markdown files and building document hierarchy"
+
+[lib]
+name = "readual_md"
+path = "src/lib.rs"
