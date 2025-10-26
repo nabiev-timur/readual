@@ -29,17 +29,17 @@ impl DocumentHierarchy {
     }
 }
 
-/// Парсит Markdown файл по указанному пути и возвращает иерархию заголовков
+/// Parses Markdown file at specified path and returns heading hierarchy
 /// 
-/// # Аргументы
+/// # Arguments
 /// 
-/// * `file_path` - путь к Markdown файлу
+/// * `file_path` - path to Markdown file
 /// 
-/// # Возвращает
+/// # Returns
 /// 
-/// * `Result<DocumentHierarchy, String>` - структура с заголовками или ошибка
+/// * `Result<DocumentHierarchy, String>` - structure with headings or error
 /// 
-/// # Примеры
+/// # Examples
 /// 
 /// ```rust
 /// use readual_md::parse_markdown_file;
@@ -52,33 +52,33 @@ impl DocumentHierarchy {
 pub fn parse_markdown_file<P: AsRef<Path>>(file_path: P) -> Result<DocumentHierarchy, String> {
     let path = file_path.as_ref();
     
-    // Проверяем, что файл существует
+    // Check if file exists
     if !path.exists() {
-        return Err(format!("Файл не найден: {}", path.display()));
+        return Err(format!("File not found: {}", path.display()));
     }
     
-    // Проверяем, что это файл
+    // Check if it's a file
     if !path.is_file() {
-        return Err(format!("Путь не является файлом: {}", path.display()));
+        return Err(format!("Path is not a file: {}", path.display()));
     }
     
-    // Читаем содержимое файла
+    // Read file content
     let content = fs::read_to_string(path)
-        .map_err(|e| format!("Ошибка чтения файла {}: {}", path.display(), e))?;
+        .map_err(|e| format!("Error reading file {}: {}", path.display(), e))?;
     
-    // Парсим содержимое
+    // Parse content
     Ok(parse_markdown_content(&content))
 }
 
-/// Парсит содержимое Markdown и возвращает иерархию заголовков
+/// Parses Markdown content and returns heading hierarchy
 /// 
-/// # Аргументы
+/// # Arguments
 /// 
-/// * `content` - содержимое Markdown файла
+/// * `content` - Markdown file content
 /// 
-/// # Возвращает
+/// # Returns
 /// 
-/// * `DocumentHierarchy` - структура с заголовками
+/// * `DocumentHierarchy` - structure with headings
 pub fn parse_markdown_content(content: &str) -> DocumentHierarchy {
     let mut hierarchy = DocumentHierarchy::new();
     let lines: Vec<&str> = content.lines().collect();
@@ -86,13 +86,13 @@ pub fn parse_markdown_content(content: &str) -> DocumentHierarchy {
     for (line_number, line) in lines.iter().enumerate() {
         let trimmed = line.trim();
         
-        // Проверяем, является ли строка заголовком
+        // Check if line is a heading
         if trimmed.starts_with('#') {
             let level = trimmed.chars()
                 .take_while(|&c| c == '#')
                 .count() as u32;
             
-            // Ограничиваем уровень заголовка (Markdown поддерживает до 6 уровней)
+            // Limit heading level (Markdown supports up to 6 levels)
             if level <= 6 {
                 let text = trimmed[level as usize..].trim().to_string();
                 if !text.is_empty() {
@@ -103,4 +103,26 @@ pub fn parse_markdown_content(content: &str) -> DocumentHierarchy {
     }
 
     hierarchy
+}
+
+/// Extracts commands from code blocks between ``` and ```
+pub fn extract_commands(content: &str) -> Vec<String> {
+    let mut commands = Vec::new();
+    let lines: Vec<&str> = content.lines().collect();
+    let mut in_code_block = false;
+    
+    for line in lines {
+        let trimmed = line.trim();
+        
+        if trimmed == "```" {
+            in_code_block = !in_code_block;
+            continue;
+        }
+        
+        if in_code_block && !trimmed.is_empty() {
+            commands.push(trimmed.to_string());
+        }
+    }
+    
+    commands
 }

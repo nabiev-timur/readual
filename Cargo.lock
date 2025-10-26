@@ -156,6 +156,7 @@ name = "readual-command-run"
 version = "0.1.0"
 dependencies = [
  "clap",
+ "readual-md",
 ]
 
 [[package]]
