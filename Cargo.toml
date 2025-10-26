@@ -1,0 +1,15 @@
+[workspace]
+members = [
+    "creates/readual-cli",
+    "creates/readual-md",
+    "creates/readual-command-info",
+    "creates/readual-command-run",
+]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+authors = ["Nabiev Timur <nabievtimurprogrammer@gmail.com>"]
+license = "MIT"
+description = "A console utility for reading and processing text"

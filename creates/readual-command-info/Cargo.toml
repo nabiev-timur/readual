@@ -1,0 +1,15 @@
+[package]
+name = "readual-command-info"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "Library for parsing Markdown files and building document hierarchy"
+
+[dependencies]
+readual-md = { path = "../readual-md" }
+clap = { version = "4.4", features = ["derive"] }
+
+[lib]
+name = "readual_command_info"
+path = "src/lib.rs"
