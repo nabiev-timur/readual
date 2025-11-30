@@ -71,7 +71,7 @@ pub fn read_document(path: &Path) -> Result<Document, ReadError> {
 /// Создание документа из строки
 pub fn from_string(s: String) -> Document {
     let mut line_starts = vec![0];
-    
+
     let mut i = 0;
     while i < s.len() {
         match s.as_bytes().get(i) {
@@ -148,8 +148,243 @@ impl Document {
         if span.start >= self.buf.len() {
             return "";
         }
+
+		if span.end < span.start {
+			return "";
+		}
+		
         let end = span.end.min(self.buf.len());
         &self.buf[span.start..end]
+    }
+
+    /// Итератор по всем строкам документа, возвращает Span для каждой строки
+    pub fn lines(&self) -> LinesIterator<'_> {
+        LinesIterator {
+            doc: self,
+            current_line: 0,
+        }
+    }
+
+    /// Итератор по строкам внутри указанного Span, возвращает Span для каждой строки
+    pub fn lines_in_span(&self, span: &Span) -> SpanLinesIterator<'_> {
+        let start_line = self.line_of(span.start);
+        let end_line = self.line_of(span.end.min(self.buf.len()));
+        SpanLinesIterator {
+            doc: self,
+            span: span.clone(),
+            current_line: start_line,
+            end_line: end_line + 1, // +1 чтобы включить последнюю строку
+        }
+    }
+
+	/// Функция для проверки начала строки
+	pub fn starts_with(&self, span: &Span, prefix: &str) -> bool {
+		self.slice(span).starts_with(prefix)
+	}
+
+	/// Функция для проверки вхождения подстроки в span
+	pub fn contains(&self, span: &Span, substring: &str) -> bool {
+		self.slice(span).contains(substring)
+	}
+
+	/// Функция для получения позиции подстроки в документе
+	/// Возвращает позицию относительно документа, а не span
+	pub fn pos_of_str(&self, span: &Span, str: &str) -> usize {
+		let text = self.slice(span);
+		if let Some(pos) = text.find(str) {
+			span.start + pos
+		} else {
+			span.end // Если не найдено, возвращаем конец span
+		}
+	}
+
+	/// Обрезать пробелы в начале span
+	pub fn trim_start(&self, span: &Span) -> Span {
+		let text = self.slice(span);
+		let trimmed = text.trim_start();
+		let trim_len = text.len() - trimmed.len();
+		(span.start + trim_len)..span.end
+	}
+
+	/// Обрезать пробелы в конце span
+	pub fn trim_end(&self, span: &Span) -> Span {
+		let text = self.slice(span);
+		let trimmed = text.trim_end();
+		let trim_len = text.len() - trimmed.len();
+		span.start..(span.end - trim_len)
+	}
+
+	/// Обрезать пробелы в начале и конце span
+	pub fn trim(&self, span: &Span) -> Span {
+		let trimmed_start = self.trim_start(span);
+		self.trim_end(&trimmed_start)
+	}
+
+	/// Подсчитать количество вхождений символа в span
+	pub fn count_chars(&self, span: &Span, ch: &str) -> u8 {
+		let text = self.slice(span);
+		text.matches(ch).count() as u8
+	}
+
+	/// Функция для захвата групп регулярного выражения в span
+	/// Возвращает Vec<Option<Span>>, где:
+	/// - [0] - полное совпадение (всегда Some, если есть совпадение)
+	/// - [1..] - захваченные группы (Some если группа захвачена, None если нет)
+	/// 
+	/// ВАЖНО: позиции в Span относительны к документу, а не к строке
+	pub fn captures(&self, span: &Span, regex: &str) -> Vec<Option<Span>> {
+		use regex::Regex;
+		
+		let re = match Regex::new(regex) {
+			Ok(re) => re,
+			Err(_) => return vec![], // Возвращаем пустой вектор при ошибке регулярки
+		};
+		
+		let text = self.slice(span);
+		let captures = match re.captures(text) {
+			Some(caps) => caps,
+			None => return vec![], // Нет совпадений
+		};
+		
+		// Преобразуем все группы в Span с учётом смещения span.start
+		captures.iter()
+			.map(|opt_match| {
+				opt_match.map(|m| {
+					let match_span = m.range();
+					// Добавляем смещение span.start, чтобы позиции были относительно документа
+					(span.start + match_span.start)..(span.start + match_span.end)
+				})
+			})
+			.collect()
+	}
+}
+
+/// Итератор по строкам документа, возвращает Span для каждой строки
+pub struct LinesIterator<'a> {
+    doc: &'a Document,
+    current_line: usize,
+}
+
+impl<'a> Iterator for LinesIterator<'a> {
+    type Item = Span;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.current_line >= self.doc.line_starts.len().saturating_sub(1) {
+            return None;
+        }
+
+        let span = self.doc.line_span(self.current_line);
+        self.current_line += 1;
+        Some(span)
+    }
+}
+
+/// Итератор по строкам внутри Span, возвращает Span для каждой строки
+/// Использует line_starts напрямую для определения диапазона строк
+pub struct SpanLinesIterator<'a> {
+    doc: &'a Document,
+    span: Span,
+    current_line: usize,
+    end_line: usize,
+}
+
+impl<'a> Iterator for SpanLinesIterator<'a> {
+    type Item = Span;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        // Используем line_starts напрямую для определения границ
+        if self.current_line >= self.end_line {
+            return None;
+        }
+
+        // Получаем границы текущей строки из line_starts
+        let line_start = *self.doc.line_starts.get(self.current_line)?;
+        let line_end = self.doc.line_starts
+            .get(self.current_line + 1)
+            .copied()
+            .unwrap_or(self.doc.buf.len());
+        
+        // Обрезаем строку по границам span
+        let intersection_start = line_start.max(self.span.start);
+        let intersection_end = line_end.min(self.span.end);
+        
+        // Пропускаем строки, которые не пересекаются с span
+        if intersection_start >= intersection_end {
+            self.current_line += 1;
+            return self.next();
+        }
+
+        self.current_line += 1;
+        Some(intersection_start..intersection_end)
+    }
+}
+
+/// Extension trait для &str, предоставляющий итератор по строкам
+pub trait StrLinesExt {
+    /// Итератор по строкам, возвращает &str для каждой строки
+    fn lines_iter(&self) -> StrLinesIterator<'_>;
+}
+
+impl StrLinesExt for str {
+    fn lines_iter(&self) -> StrLinesIterator<'_> {
+        StrLinesIterator {
+            s: self,
+            pos: 0,
+        }
+    }
+}
+
+/// Итератор по строкам для &str, возвращает &str для каждой строки
+pub struct StrLinesIterator<'a> {
+    s: &'a str,
+    pos: usize,
+}
+
+impl<'a> Iterator for StrLinesIterator<'a> {
+    type Item = &'a str;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.pos >= self.s.len() {
+            return None;
+        }
+
+        let start = self.pos;
+        let bytes = self.s.as_bytes();
+        
+        // Ищем конец строки
+        while self.pos < self.s.len() {
+            match bytes.get(self.pos) {
+                Some(b'\r') => {
+                    // Проверяем, не \r\n ли это
+                    if self.pos + 1 < self.s.len() && bytes[self.pos + 1] == b'\n' {
+                        let line = &self.s[start..self.pos];
+                        self.pos += 2; // Пропускаем \r\n
+                        return Some(line);
+                    } else {
+                        let line = &self.s[start..self.pos];
+                        self.pos += 1; // Пропускаем \r
+                        return Some(line);
+                    }
+                }
+                Some(b'\n') => {
+                    let line = &self.s[start..self.pos];
+                    self.pos += 1; // Пропускаем \n
+                    return Some(line);
+                }
+                _ => {
+                    self.pos += 1;
+                }
+            }
+        }
+
+        // Последняя строка без завершающего переноса
+        if start < self.s.len() {
+            let line = &self.s[start..];
+            self.pos = self.s.len();
+            Some(line)
+        } else {
+            None
+        }
     }
 }
 
@@ -238,6 +473,126 @@ mod tests {
         assert_eq!(doc.slice(&(0..5)), "hello");
         assert_eq!(doc.slice(&(0..100)), "hello");
         assert_eq!(doc.slice(&(100..200)), "");
+    }
+
+    #[test]
+    fn test_document_lines_iterator() {
+        let doc = from_string("line1\nline2\nline3".to_string());
+        let lines: Vec<Span> = doc.lines().collect();
+        assert_eq!(lines.len(), 3);
+        assert_eq!(doc.slice(&lines[0]), "line1\n");
+        assert_eq!(doc.slice(&lines[1]), "line2\n");
+        assert_eq!(doc.slice(&lines[2]), "line3");
+    }
+
+    #[test]
+    fn test_document_lines_iterator_empty() {
+        let doc = from_string(String::new());
+        let lines: Vec<Span> = doc.lines().collect();
+        assert_eq!(lines.len(), 1);
+        assert_eq!(doc.slice(&lines[0]), "");
+    }
+
+    #[test]
+    fn test_document_lines_iterator_no_trailing_newline() {
+        let doc = from_string("line1\nline2".to_string());
+        let lines: Vec<Span> = doc.lines().collect();
+        assert_eq!(lines.len(), 2);
+        assert_eq!(doc.slice(&lines[0]), "line1\n");
+        assert_eq!(doc.slice(&lines[1]), "line2");
+    }
+
+    #[test]
+    fn test_span_lines_iterator() {
+        let doc = from_string("line1\nline2\nline3\nline4".to_string());
+        let span = 6..18; // От начала line2 до конца line3
+        let lines: Vec<Span> = doc.lines_in_span(&span).collect();
+        assert_eq!(lines.len(), 2);
+        assert_eq!(doc.slice(&lines[0]), "line2\n");
+        assert_eq!(doc.slice(&lines[1]), "line3");
+    }
+
+    #[test]
+    fn test_span_lines_iterator_partial() {
+        let doc = from_string("line1\nline2\nline3".to_string());
+        let span = 7..13; // Часть line2 и часть line3
+        let lines: Vec<Span> = doc.lines_in_span(&span).collect();
+        assert_eq!(lines.len(), 2);
+        assert_eq!(doc.slice(&lines[0]), "ine2");
+        assert_eq!(doc.slice(&lines[1]), "line");
+    }
+
+    #[test]
+    fn test_span_lines_iterator_empty() {
+        let doc = from_string("line1\nline2".to_string());
+        let span = 0..0;
+        let lines: Vec<Span> = doc.lines_in_span(&span).collect();
+        assert_eq!(lines.len(), 0);
+    }
+
+    #[test]
+    fn test_str_lines_iterator() {
+        let s = "line1\nline2\nline3";
+        let lines: Vec<&str> = s.lines_iter().collect();
+        assert_eq!(lines.len(), 3);
+        assert_eq!(lines[0], "line1");
+        assert_eq!(lines[1], "line2");
+        assert_eq!(lines[2], "line3");
+    }
+
+    #[test]
+    fn test_str_lines_iterator_windows() {
+        let s = "line1\r\nline2\r\nline3";
+        let lines: Vec<&str> = s.lines_iter().collect();
+        assert_eq!(lines.len(), 3);
+        assert_eq!(lines[0], "line1");
+        assert_eq!(lines[1], "line2");
+        assert_eq!(lines[2], "line3");
+    }
+
+    #[test]
+    fn test_str_lines_iterator_mac() {
+        let s = "line1\rline2\rline3";
+        let lines: Vec<&str> = s.lines_iter().collect();
+        assert_eq!(lines.len(), 3);
+        assert_eq!(lines[0], "line1");
+        assert_eq!(lines[1], "line2");
+        assert_eq!(lines[2], "line3");
+    }
+
+    #[test]
+    fn test_str_lines_iterator_mixed() {
+        let s = "a\nb\r\nc\rd";
+        let lines: Vec<&str> = s.lines_iter().collect();
+        assert_eq!(lines.len(), 4);
+        assert_eq!(lines[0], "a");
+        assert_eq!(lines[1], "b");
+        assert_eq!(lines[2], "c");
+        assert_eq!(lines[3], "d");
+    }
+
+    #[test]
+    fn test_str_lines_iterator_empty() {
+        let s = "";
+        let lines: Vec<&str> = s.lines_iter().collect();
+        assert_eq!(lines.len(), 0);
+    }
+
+    #[test]
+    fn test_str_lines_iterator_no_trailing_newline() {
+        let s = "line1\nline2";
+        let lines: Vec<&str> = s.lines_iter().collect();
+        assert_eq!(lines.len(), 2);
+        assert_eq!(lines[0], "line1");
+        assert_eq!(lines[1], "line2");
+    }
+
+    #[test]
+    fn test_str_lines_iterator_single_line() {
+        let s = "single line";
+        let lines: Vec<&str> = s.lines_iter().collect();
+        assert_eq!(lines.len(), 1);
+        assert_eq!(lines[0], "single line");
     }
 }
 

@@ -1,113 +1,151 @@
-# Readual Project
+# [readual] Readual Project
 
 Это основной проект для работы с текстом и Markdown файлами.
 
-## Описание
+## [env] Окружение
 
-Readual - это набор утилит для обработки и анализа текстовых файлов.
-
-### Основные возможности
-
-- Парсинг Markdown файлов
-- Построение иерархии заголовков
-- Анализ структуры документов
-
-## Установка
-
-### Требования
-
-- Rust 1.70+
-- Cargo
-
-### Сборка
+### Linux-x64-rpm
 
 ```bash
-cargo build
+echo readual::env::Linux-x64-rpm
 ```
 
-## Использование
-
-### CLI утилита
+### Linux-x86-rpm
 
 ```bash
-readual --help
+echo readual::env::Linux-x86-rpm
 ```
 
-### MD парсер
+### Linux-x64-deb
 
 ```bash
-readual-md --info
+echo readual::env::Linux-x64-deb
 ```
 
-## Структура проекта
+### Linux-x86-deb
 
-### Компоненты
-
-- `readual-cli` - основная CLI утилита
-- `readual-md` - парсер Markdown файлов
-
-### Архитектура
-
-#### Модули
-
-- `parser` - парсинг файлов
-- `analyzer` - анализ структуры
-- `formatter` - форматирование вывода
-
-#### Конфигурация
-
-- Настройки парсера
-- Опции форматирования
-- Параметры вывода
-
-## Примеры
-
-### Базовое использование
-
-```rust
-use readual_md::parser::MarkdownParser;
-
-let parser = MarkdownParser::new();
-let result = parser.parse_file("README.md");
+```bash
+echo readual::env::Linux-x86-deb
 ```
 
-### Расширенные возможности
+### Windows
 
-```rust
-use readual_md::analyzer::DocumentAnalyzer;
+Описание как установить msvc
 
-let analyzer = DocumentAnalyzer::new();
-let hierarchy = analyzer.build_hierarchy(&content);
-```
+## [build] Сборка
 
-## Лицензия
+### Linux
+<!-- rdl:alias=linux -->
 
-MIT License
+#### x64
 
-## Вклад в проект
+##### Release
+<!-- rdl:alias=release -->
 
-### Как помочь
+`echo readual::build::Linux::x64::Release`
 
-1. Форкните репозиторий
-2. Создайте ветку для новой функции
-3. Внесите изменения
-4. Создайте Pull Request
+##### Debug
+<!-- rdl:alias=debug -->
 
-### Стандарты кода
+`echo readual::build::Linux::x64::Release`
 
-- Используйте `cargo fmt`
-- Запускайте `cargo clippy`
-- Покрывайте тестами
+#### x86
 
-## Changelog
+##### Release
+<!-- rdl:alias=release -->
 
-### v0.1.0
+`echo readual::build::Linux::x86::Release`
 
-- Первоначальный релиз
-- Базовая функциональность CLI
-- Парсинг Markdown заголовков
+##### Debug
+<!-- rdl:alias=debug -->
 
-## Контакты
+`echo readual::build::Linux::x86::Debug`
 
-- Автор: Nabiev Timur
-- Email: nabievtimurprogrammer@gmail.com
+### Windows
+
+#### x64
+
+##### Release
+<!-- rdl:alias=release -->
+
+`echo readual::build::Windows::x64::Release`
+
+##### Debug
+<!-- rdl:alias=debug -->
+
+`echo readual::build::Windows::x64::Debug`
+
+#### x86
+
+##### Release
+<!-- rdl:alias=release -->
+
+`echo readual::build::Windows::x86::Release`
+
+##### Debug
+<!-- rdl:alias=debug -->
+
+`echo readual::build::Windows::x86::Debug`
+
+## [test] Тестирование
+
+### Linux
+<!-- rdl:alias=linux -->
+
+#### x64
+
+##### Release
+<!-- rdl:alias=release -->
+<!-- rdl:deps=build::Linux::x64::release -->
+
+`echo readual::test::Linux::x64::Release`
+
+##### Debug
+<!-- rdl:alias=debug -->
+<!-- rdl:deps=build::Linux::x64::debug -->
+
+`echo readual::test::Linux::x64::Debug`
+
+#### x86
+
+##### Release
+<!-- rdl:alias=release -->
+<!-- rdl:deps=build::Linux::x86::release -->
+
+`echo readual::test::Linux::x86::Release`
+
+##### Debug
+<!-- rdl:alias=debug -->
+<!-- rdl:deps=build::Linux::x86::release -->
+
+`echo readual::test::Linux::x86::Debug`
+
+### Windows
+
+#### x64
+
+##### Release
+<!-- rdl:alias=release -->
+<!-- rdl:deps=build::Windows::x64::release -->
+
+`echo readual::test::Windows::x64::Release`
+
+##### Debug
+<!-- rdl:alias=debug -->
+<!-- rdl:deps=build::Windows::x64::debug -->
+
+`echo readual::test::Windows::x64::Debug`
+
+#### x86
+
+##### Release
+<!-- rdl:alias=release -->
+<!-- rdl:deps=build::Windows::x86::release -->
+
+`echo readual::test::Windows::x86::Release`
+
+##### Debug
+<!-- rdl:alias=debug -->
+<!-- rdl:deps=build::Windows::x86::debug -->
+
+`echo readual::test::Windows::x86::Debug`

@@ -4,6 +4,7 @@ members = [
     "creates/readual-md",
     "creates/readual-command-info",
     "creates/readual-command-run",
+    "creates/readual-output",
 ]
 resolver = "2"
 
