@@ -9,6 +9,7 @@ description = "Library for running commands and scripts"
 [dependencies]
 clap = { version = "4.4", features = ["derive"] }
 readual-md = { path = "../readual-md" }
+readual-output = { path = "../readual-output" }
 
 [lib]
 name = "readual_command_run"

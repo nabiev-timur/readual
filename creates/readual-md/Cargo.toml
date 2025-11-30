@@ -9,3 +9,9 @@ description = "Library for parsing Markdown files and building document hierarch
 [lib]
 name = "readual_md"
 path = "src/lib.rs"
+
+[dev-dependencies]
+tempfile = "3.8"
+
+[dependencies]
+regex = "1.12.2"

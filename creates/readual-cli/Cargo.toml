@@ -9,6 +9,7 @@ description.workspace = true
 [dependencies]
 readual-command-info = { path = "../readual-command-info" }
 readual-command-run = { path = "../readual-command-run" }
+readual-output = { path = "../readual-output" }
 clap = { version = "4.4", features = ["derive"] }
 
 [[bin]]
