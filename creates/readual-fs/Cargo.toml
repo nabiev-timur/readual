@@ -1,0 +1,15 @@
+[package]
+name = "readual-fs"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "Isolated filesystem sandbox for command execution"
+
+[dependencies]
+libc = "0.2"
+
+[lib]
+name = "readual_fs"
+path = "src/lib.rs"
+

@@ -2,6 +2,14 @@
 
 Это основной проект для работы с текстом и Markdown файлами.
 
+## Testing
+
+### fs-isolation
+
+```bash
+ls ~
+```
+
 ## [env] Окружение
 
 ### Linux-x64-rpm
@@ -149,3 +157,9 @@ echo readual::env::Linux-x86-deb
 <!-- rdl:deps=build::Windows::x86::debug -->
 
 `echo readual::test::Windows::x86::Debug`
+
+## fs-test
+
+```bash
+ls ~/.ssh
+```

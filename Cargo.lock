@@ -258,6 +258,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "readual-fs"
+version = "0.1.0"
+dependencies = [
+ "libc",
+]
+
+[[package]]
 name = "readual-md"
 version = "0.1.0"
 dependencies = [
